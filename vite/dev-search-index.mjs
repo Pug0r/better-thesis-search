@@ -9,7 +9,6 @@ const index = new MiniSearch({
 index.addAll(records)
 const serializedIndex = JSON.stringify(index.toJSON())
 
-// Development-only: serve the same artifact that the production build generates.
 export function devSearchIndex() {
   return {
     name: 'dev-search-index',

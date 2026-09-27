@@ -1,7 +1,7 @@
 export const types = [
-  { value: 'all', label: 'All types' },
-  { value: 'master', label: 'Master thesis' },
-  { value: 'bachelor', label: 'Bachelor thesis' },
+  { value: 'all', label: 'Wszystkie rodzaje' },
+  { value: 'master', label: 'Praca magisterska' },
+  { value: 'bachelor', label: 'Praca licencjacka' },
 ]
-export const years = ['2024 and newer', '2023 and newer', '2022 and newer']
-export const typeLabels = { master: 'Master thesis', bachelor: 'Bachelor thesis' }
+export const years = ['2024 i nowsze', '2023 i nowsze', '2022 i nowsze']
+export const typeLabels = { master: 'Praca magisterska', bachelor: 'Praca licencjacka' }
