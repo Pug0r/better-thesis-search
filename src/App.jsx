@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import MiniSearch from 'minisearch'
-import { useVirtualizer } from '@tanstack/react-virtual'
+import { useWindowVirtualizer } from '@tanstack/react-virtual'
 import { departments, languages, typeLabels, types, years } from './data'
 import './App.css'
 
@@ -13,7 +13,6 @@ function SearchApp() {
   const [selectedLanguages, setSelectedLanguages] = useState([])
   const [infoOpen, setInfoOpen] = useState(false)
   const [visibleCount, setVisibleCount] = useState(10)
-  const listParentRef = useRef(null)
   const toggleFilter = (setSelected, value) => setSelected((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value])
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}search-index.json`)
@@ -39,17 +38,16 @@ function SearchApp() {
   }, [catalog.index, query, selectedDepartments, selectedLanguages, selectedTypes, selectedYears])
   const displayedResults = results.slice(0, visibleCount)
   useEffect(() => {
-    const list = listParentRef.current
-    if (!list || visibleCount >= results.length) return undefined
+    if (visibleCount >= results.length) return undefined
     const loadOnScroll = () => {
-      if (list.scrollTop + list.clientHeight >= list.scrollHeight - 160) {
+      if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 300) {
         setVisibleCount((count) => Math.min(count + 10, results.length))
       }
     }
-    list.addEventListener('scroll', loadOnScroll)
-    return () => list.removeEventListener('scroll', loadOnScroll)
+    window.addEventListener('scroll', loadOnScroll)
+    return () => window.removeEventListener('scroll', loadOnScroll)
   }, [results.length, visibleCount])
-  const rowVirtualizer = useVirtualizer({ count: displayedResults.length, getScrollElement: () => listParentRef.current, estimateSize: () => 190, overscan: 4 })
+  const rowVirtualizer = useWindowVirtualizer({ count: displayedResults.length, estimateSize: () => 190, overscan: 4 })
   return <main className="app-shell">
     <button className="info-button" type="button" onClick={() => setInfoOpen((open) => !open)} aria-expanded={infoOpen} aria-label="Informacje">i</button>
     {infoOpen && <aside className="info-panel"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante.</p><p>Curabitur blandit tempus porttitor. Aenean lacinia bibendum nulla sed consectetur.</p></aside>}
@@ -59,7 +57,7 @@ function SearchApp() {
       <section className="results-panel" aria-live="polite">
         <div className="search-box"><span className="search-icon" aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Szukaj po tytule, autorze, uczelni..." aria-label="Szukaj prac" autoFocus />{query && <button className="clear-button" type="button" onClick={() => setQuery('')} aria-label="Wyczyść wyszukiwanie">×</button>}</div>
         <div className="results-heading"><span>{results.length} {results.length === 1 ? 'praca' : 'prac'}</span><span className="index-note">{displayedResults.length} widocznych</span></div>
-        {catalog.error ? <div className="empty-state"><h2>Indeks wyszukiwania niedostępny</h2><p>Uruchom ponownie kompilację aplikacji.</p></div> : displayedResults.length ? <div className="results-list" ref={listParentRef}><div className="results-spacer" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>{rowVirtualizer.getVirtualItems().map((virtualRow) => { const result = displayedResults[virtualRow.index]; return <article className="result-card" key={result.id} ref={rowVirtualizer.measureElement} data-index={virtualRow.index} style={{ transform: `translateY(${virtualRow.start}px)` }}><div className="result-content"><div className="result-header"><span className="result-type">{typeLabels[result.type]}</span><span className="result-year">{result.year}</span><span className="result-language">{result.language}</span></div><h2>{result.title}</h2><p className="result-author">Autor: {result.author} <span>·</span> Promotor: {result.advisor}</p><p className="result-department">{result.department}</p><div className="keywords">{result.keywords.map((keyword) => <span key={keyword}>{keyword}</span>)}</div></div><a className="work-button" href={result.url} target="_blank" rel="noreferrer">Idź do pracy</a></article> })}</div></div> : <div className="empty-state"><span>⌕</span><h2>{catalog.index ? (hasCriteria ? 'Nie znaleziono wyników' : 'Rozpocznij wyszukiwanie') : 'Ładowanie indeksu…'}</h2><p>{catalog.index ? (hasCriteria ? 'Spróbuj zmienić frazę lub filtry.' : 'Wyszukaj po tytule, autorze lub słowach kluczowych.') : 'Przygotowywanie lokalnego indeksu wyszukiwania.'}</p></div>}
+        {catalog.error ? <div className="empty-state"><h2>Indeks wyszukiwania niedostępny</h2><p>Uruchom ponownie kompilację aplikacji.</p></div> : displayedResults.length ? <div className="results-list"><div className="results-spacer" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>{rowVirtualizer.getVirtualItems().map((virtualRow) => { const result = displayedResults[virtualRow.index]; return <article className="result-card" key={result.id} ref={rowVirtualizer.measureElement} data-index={virtualRow.index} style={{ transform: `translateY(${virtualRow.start}px)` }}><div className="result-content"><div className="result-header"><span className="result-type">{typeLabels[result.type]}</span><span className="result-year">{result.year}</span><span className="result-language">{result.language}</span></div><h2>{result.title}</h2><p className="result-author">Autor: {result.author} <span>·</span> Promotor: {result.advisor}</p><p className="result-department">{result.department}</p><div className="keywords">{result.keywords.map((keyword) => <span key={keyword}>{keyword}</span>)}</div></div><a className="work-button" href={result.url} target="_blank" rel="noreferrer">Idź do pracy</a></article> })}</div></div> : <div className="empty-state"><span>⌕</span><h2>{catalog.index ? (hasCriteria ? 'Nie znaleziono wyników' : 'Rozpocznij wyszukiwanie') : 'Ładowanie indeksu…'}</h2><p>{catalog.index ? (hasCriteria ? 'Spróbuj zmienić frazę lub filtry.' : 'Wyszukaj po tytule, autorze lub słowach kluczowych.') : 'Przygotowywanie lokalnego indeksu wyszukiwania.'}</p></div>}
       </section>
     </div>
   </main>
