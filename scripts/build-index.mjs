@@ -5,8 +5,8 @@ import records from '../src/data.json' with { type: 'json' }
 
 const index = new MiniSearch({
   idField: 'id',
-  fields: ['title', 'author', 'advisor', 'department', 'keywords'],
-  storeFields: ['id', 'title', 'author', 'advisor', 'department', 'year', 'keywords', 'url', 'type'],
+  fields: ['title', 'author', 'advisor', 'reviewers', 'department', 'keywords', 'language'],
+  storeFields: ['id', 'title', 'author', 'advisor', 'reviewers', 'department', 'year', 'keywords', 'language', 'url', 'type'],
 })
 index.addAll(records)
 
