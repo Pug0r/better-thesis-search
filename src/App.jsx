@@ -7,12 +7,13 @@ import './App.css'
 function SearchApp() {
   const [catalog, setCatalog] = useState({ index: null, error: null })
   const [query, setQuery] = useState('')
-  const [type, setType] = useState('all')
-  const [year, setYear] = useState('Dowolny rok')
-  const [department, setDepartment] = useState('Wszystkie wydziały')
-  const [language, setLanguage] = useState('Dowolny język')
+  const [selectedTypes, setSelectedTypes] = useState([])
+  const [selectedYears, setSelectedYears] = useState([])
+  const [selectedDepartments, setSelectedDepartments] = useState([])
+  const [selectedLanguages, setSelectedLanguages] = useState([])
   const [infoOpen, setInfoOpen] = useState(false)
   const listParentRef = useRef(null)
+  const toggleFilter = (setSelected, value) => setSelected((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value])
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}search-index.json`)
       .then((response) => response.ok ? response.text() : Promise.reject(new Error('Index unavailable')))
@@ -28,15 +29,15 @@ function SearchApp() {
     return catalog.index.search(searchQuery, {
       prefix: Boolean(query.trim()),
       fuzzy: query.trim() ? 0.2 : false,
-      filter: (result) => (type === 'all' || result.type === type) && (year === 'Dowolny rok' || result.year === Number(year)) && (department === 'Wszystkie wydziały' || result.department === department) && (language === 'Dowolny język' || result.language === language),
+      filter: (result) => (!selectedTypes.length || selectedTypes.includes(result.type)) && (!selectedYears.length || selectedYears.includes(String(result.year))) && (!selectedDepartments.length || selectedDepartments.includes(result.department)) && (!selectedLanguages.length || selectedLanguages.includes(result.language)),
     })
-  }, [catalog.index, department, language, query, type, year])
+  }, [catalog.index, query, selectedDepartments, selectedLanguages, selectedTypes, selectedYears])
   const rowVirtualizer = useVirtualizer({ count: results.length, getScrollElement: () => listParentRef.current, estimateSize: () => 168, overscan: 4 })
   return <main className="app-shell">
     <button className="info-button" type="button" onClick={() => setInfoOpen((open) => !open)} aria-expanded={infoOpen} aria-label="Informacje">i</button>
     {infoOpen && <aside className="info-panel"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante.</p><p>Curabitur blandit tempus porttitor. Aenean lacinia bibendum nulla sed consectetur.</p></aside>}
     <div className="workspace">
-      <aside className="filter-rail"><h2>Filtruj</h2><fieldset><legend>Rodzaj pracy</legend>{types.map((item) => <label key={item.value}><input type="checkbox" checked={type === item.value} onChange={() => setType(item.value)} /> <span>{item.label}</span></label>)}</fieldset><fieldset><legend>Rok publikacji</legend>{years.map((item) => { const value = item.slice(0, 4); return <label key={item}><input type="checkbox" checked={year === value} onChange={() => setYear(year === value ? 'Dowolny rok' : value)} /> <span>{item}</span></label> })}</fieldset><label className="select-filter"><span>Wydział</span><select value={department} onChange={(event) => setDepartment(event.target.value)}><option>Wszystkie wydziały</option>{departments.map((item) => <option key={item}>{item}</option>)}</select></label><label className="select-filter"><span>Język</span><select value={language} onChange={(event) => setLanguage(event.target.value)}><option>Dowolny język</option>{languages.map((item) => <option key={item}>{item}</option>)}</select></label></aside>
+      <aside className="filter-rail"><h2>Filtruj</h2><fieldset><legend>Rodzaj pracy</legend>{types.filter((item) => item.value !== 'all').map((item) => <label key={item.value}><input type="checkbox" checked={!selectedTypes.length || selectedTypes.includes(item.value)} onChange={() => toggleFilter(setSelectedTypes, item.value)} /> <span>{item.label}</span></label>)}</fieldset><fieldset><legend>Rok publikacji</legend>{years.map((item) => <label key={item}><input type="checkbox" checked={selectedYears.includes(item)} onChange={() => toggleFilter(setSelectedYears, item)} /> <span>{item}</span></label>)}</fieldset><fieldset><legend>Wydział</legend>{departments.map((item) => <label key={item}><input type="checkbox" checked={selectedDepartments.includes(item)} onChange={() => toggleFilter(setSelectedDepartments, item)} /> <span>{item}</span></label>)}</fieldset><fieldset><legend>Język</legend>{languages.map((item) => <label key={item}><input type="checkbox" checked={selectedLanguages.includes(item)} onChange={() => toggleFilter(setSelectedLanguages, item)} /> <span>{item}</span></label>)}</fieldset></aside>
       <section className="results-panel" aria-live="polite">
         <div className="search-box"><span className="search-icon" aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Szukaj po tytule, autorze, uczelni..." aria-label="Szukaj prac" autoFocus />{query && <button className="clear-button" type="button" onClick={() => setQuery('')} aria-label="Wyczyść wyszukiwanie">×</button>}</div>
         <div className="results-heading"><span>{results.length} {results.length === 1 ? 'praca' : 'prac'}</span><span className="index-note">wszystkie rekordy</span></div>
