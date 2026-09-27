@@ -26,7 +26,7 @@ function SearchApp() {
     return catalog.index.search(searchQuery, {
       prefix: Boolean(query.trim()),
       fuzzy: query.trim() ? 0.2 : false,
-      filter: (result) => (type === 'all' || result.type === type) && (year === 'Dowolny rok' || result.year >= Number(year)),
+      filter: (result) => (type === 'all' || result.type === type) && (year === 'Dowolny rok' || result.year === Number(year)),
     })
   }, [catalog.index, query, type, year])
   const rowVirtualizer = useVirtualizer({ count: results.length, getScrollElement: () => listParentRef.current, estimateSize: () => 168, overscan: 4 })
