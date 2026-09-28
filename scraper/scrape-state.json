@@ -1,3 +1,6 @@
 {
-  "collection_totals": {}
+  "collection_totals": {
+    "master": 78767,
+    "bachelor": 44865
+  }
 }
