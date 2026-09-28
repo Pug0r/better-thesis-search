@@ -6,7 +6,7 @@ on:
     paths-ignore:
       - scraper/scrape-state.json
   schedule:
-    - cron: '0 3 * * 0'
+    - cron: '0 3 1 * 0'
   workflow_dispatch:
 
 permissions:
