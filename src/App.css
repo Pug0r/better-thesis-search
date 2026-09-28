@@ -52,6 +52,23 @@
     color: #fff;
 }
 
+.github-link {
+    position: fixed;
+    z-index: 3;
+    top: 18px;
+    right: 58px;
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    color: #0e1947;
+    transition: color 0.2s;
+}
+
+.github-link:hover {
+    color: #475569;
+}
+
 .info-panel {
     position: fixed;
     z-index: 2;
