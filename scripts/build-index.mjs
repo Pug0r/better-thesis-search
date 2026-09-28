@@ -2,12 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import MiniSearch from 'minisearch'
 
-let records
-try {
-  records = JSON.parse(await readFile(resolve('public/search-index.json'), 'utf8'))
-} catch {
-  records = JSON.parse(await readFile(resolve('src/data.json'), 'utf8'))
-}
+const records = JSON.parse(await readFile(resolve('public/search-index.json'), 'utf8'))
 
 const index = new MiniSearch({
   idField: 'id',

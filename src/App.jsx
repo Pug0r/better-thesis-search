@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import MiniSearch from 'minisearch'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
-import { departments, languages, typeLabels, types, years } from './data'
 import './App.css'
+
+const typeLabels = { master: 'Praca magisterska', bachelor: 'Praca licencjacka' }
 
 function SearchApp() {
   const [catalog, setCatalog] = useState({ index: null, error: null })
@@ -14,6 +15,17 @@ function SearchApp() {
   const [infoOpen, setInfoOpen] = useState(false)
   const [visibleCount, setVisibleCount] = useState(10)
   const toggleFilter = (setSelected, value) => setSelected((current) => current.includes(value) ? current.filter((item) => item !== value) : [...current, value])
+  const facets = useMemo(() => {
+    if (!catalog.index) return { departments: [], languages: [], types: [], years: [] }
+    const records = catalog.index.search(MiniSearch.wildcard)
+    const values = (field) => [...new Set(records.map((record) => record[field]).filter(Boolean))].sort((left, right) => String(left).localeCompare(String(right)))
+    return {
+      departments: values('department'),
+      languages: values('language'),
+      types: values('type'),
+      years: values('year').map(String).sort((left, right) => Number(right) - Number(left)),
+    }
+  }, [catalog.index])
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}search-index.json`)
       .then((response) => response.ok ? response.text() : Promise.reject(new Error('Index unavailable')))
@@ -53,7 +65,7 @@ function SearchApp() {
     {infoOpen && <aside className="info-panel"><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante.</p><p>Curabitur blandit tempus porttitor. Aenean lacinia bibendum nulla sed consectetur.</p></aside>}
     <div className="workspace">
       <div className="page-heading"><h1>(nieoficjalna) Przeglądarka prac dyplomowych Uniwersytetu Jagiellońskiego</h1></div>
-      <aside className="filter-rail"><fieldset><legend>Rodzaj pracy</legend>{types.filter((item) => item.value !== 'all').map((item) => <label key={item.value}><input type="checkbox" checked={!selectedTypes.length || selectedTypes.includes(item.value)} onChange={() => toggleFilter(setSelectedTypes, item.value)} /> <span>{item.label}</span></label>)}</fieldset><fieldset><legend>Rok publikacji</legend>{years.map((item) => <label key={item}><input type="checkbox" checked={selectedYears.includes(item)} onChange={() => toggleFilter(setSelectedYears, item)} /> <span>{item}</span></label>)}</fieldset><fieldset><legend>Wydział</legend>{departments.map((item) => <label key={item}><input type="checkbox" checked={selectedDepartments.includes(item)} onChange={() => toggleFilter(setSelectedDepartments, item)} /> <span>{item}</span></label>)}</fieldset><fieldset><legend>Język</legend>{languages.map((item) => <label key={item}><input type="checkbox" checked={selectedLanguages.includes(item)} onChange={() => toggleFilter(setSelectedLanguages, item)} /> <span>{item}</span></label>)}</fieldset></aside>
+      <aside className="filter-rail"><fieldset><legend>Rodzaj pracy</legend>{facets.types.map((item) => <label key={item}><input type="checkbox" checked={!selectedTypes.length || selectedTypes.includes(item)} onChange={() => toggleFilter(setSelectedTypes, item)} /> <span>{typeLabels[item] || item}</span></label>)}</fieldset><fieldset><legend>Rok publikacji</legend>{facets.years.map((item) => <label key={item}><input type="checkbox" checked={selectedYears.includes(item)} onChange={() => toggleFilter(setSelectedYears, item)} /> <span>{item}</span></label>)}</fieldset><fieldset><legend>Wydział</legend>{facets.departments.map((item) => <label key={item}><input type="checkbox" checked={selectedDepartments.includes(item)} onChange={() => toggleFilter(setSelectedDepartments, item)} /> <span>{item}</span></label>)}</fieldset><fieldset><legend>Język</legend>{facets.languages.map((item) => <label key={item}><input type="checkbox" checked={selectedLanguages.includes(item)} onChange={() => toggleFilter(setSelectedLanguages, item)} /> <span>{item}</span></label>)}</fieldset></aside>
       <section className="results-panel" aria-live="polite">
         <div className="search-box"><span className="search-icon" aria-hidden="true">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Szukaj po tytule, autorze, uczelni..." aria-label="Szukaj prac" autoFocus />{query && <button className="clear-button" type="button" onClick={() => setQuery('')} aria-label="Wyczyść wyszukiwanie">×</button>}</div>
         <div className="results-heading"><span>{results.length} {results.length === 1 ? 'praca' : 'prac'}</span><span className="index-note">{displayedResults.length} widocznych</span></div>
