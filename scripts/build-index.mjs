@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import MiniSearch from 'minisearch'
@@ -11,7 +12,11 @@ const index = new MiniSearch({
 })
 index.addAll(records)
 
-const output = resolve('dist/search-index.json')
+const content = JSON.stringify(index.toJSON())
+const hash = createHash('sha256').update(content).digest('hex').slice(0, 12)
+const filename = `search-index.${hash}.json`
+
 await mkdir(resolve('dist'), { recursive: true })
-await writeFile(output, JSON.stringify(index.toJSON()))
-console.log(`Wrote ${records.length} records to ${output}`)
+await writeFile(resolve('dist', filename), content)
+await writeFile(resolve('dist/search-manifest.json'), JSON.stringify({ file: filename }) + '\n')
+console.log(`Wrote ${records.length} records to dist/${filename}`)
