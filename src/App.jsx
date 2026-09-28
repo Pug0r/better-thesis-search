@@ -7,7 +7,7 @@ const interfaceText = {
   pl: {
     title: '(nieoficjalna) Przeglądarka prac dyplomowych Uniwersytetu Jagiellońskiego',
     information: 'Informacje',
-    informationBody: ['Narzędzie przeszukuje publicznie dostępne prace dyplomowe Uniwersytetu Jagiellońskiego.', 'Dane są odświeżane automatycznie raz w miesiącu.', 'Autor: Aleksander Pugowski (aleksanderpugowski@gmail.com)'],
+    informationBody: ['Narzędzie przeszukuje publicznie dostępne prace dyplomowe Uniwersytetu Jagiellońskiego.', 'Dane są obecnie odświeżane na żądanie.'],
     type: 'Rodzaj pracy',
     year: 'Rok publikacji',
     department: 'Wydział',
@@ -29,13 +29,12 @@ const interfaceText = {
     author: 'Autor',
     advisor: 'Promotor',
     open: 'Idź do pracy',
-    polish: 'Polski',
-    english: 'English',
+    localeSwitchLabel: 'Zmień na English',
   },
   en: {
     title: '(unofficial) Jagiellonian University thesis browser',
     information: 'Information',
-    informationBody: ['This tool searches publicly available Jagiellonian University theses.', 'The data is refreshed automatically once a month.', 'Author: Aleksander Pugowski (aleksanderpugowski@gmail.com)'],
+    informationBody: ['This tool searches publicly available Jagiellonian University theses.', 'The data is currently refreshed on demand.'],
     type: 'Thesis type',
     year: 'Publication year',
     department: 'Faculty',
@@ -57,8 +56,7 @@ const interfaceText = {
     author: 'Author',
     advisor: 'Advisor',
     open: 'Open thesis',
-    polish: 'Polski',
-    english: 'English',
+    localeSwitchLabel: 'Zmień na Polski',
   },
 }
 
@@ -129,10 +127,7 @@ function SearchApp() {
   }, [results.length, visibleCount])
   const rowVirtualizer = useWindowVirtualizer({ count: displayedResults.length, estimateSize: () => 190, overscan: 4 })
   return <main className="app-shell">
-    <div className="language-switcher" aria-label="Language selector">
-      <button className="language-button" type="button" aria-pressed={locale === 'pl'} aria-label={copy.polish} title={copy.polish} onClick={() => setLocale('pl')}>🇵🇱</button>
-      <button className="language-button" type="button" aria-pressed={locale === 'en'} aria-label={copy.english} title={copy.english} onClick={() => setLocale('en')}>🇬🇧</button>
-    </div>
+    <button className="locale-toggle" type="button" aria-label={copy.localeSwitchLabel} title={copy.localeSwitchLabel} onClick={() => setLocale((current) => current === 'pl' ? 'en' : 'pl')}>{locale === 'pl' ? 'EN' : 'PL'}</button>
     <button className="info-button" type="button" onClick={() => setInfoOpen((open) => !open)} aria-expanded={infoOpen} aria-label={copy.information}>i</button>
     {infoOpen && <aside className="info-panel"><p>{copy.informationBody[0]}</p><p>{copy.informationBody[1]}</p></aside>}
     <div className="workspace">

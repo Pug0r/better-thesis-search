@@ -8,6 +8,27 @@
     background: #fff;
 }
 
+.locale-toggle {
+    position: fixed;
+    z-index: 3;
+    top: 18px;
+    left: 24px;
+    padding: 4px 10px;
+    border: 1px solid #aeb9cb;
+    border-radius: 4px;
+    background: #fff;
+    color: #0e1947;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+
+.locale-toggle:hover {
+    border-color: #0e1947;
+    background: #0e1947;
+    color: #fff;
+}
+
 .info-button {
     position: fixed;
     z-index: 3;
