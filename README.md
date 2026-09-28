@@ -4,6 +4,8 @@ The official thesis [search tool](https://ruj.uj.edu.pl/communities/531510cc-c3a
 
 Hosted by Github pages [here](https://pug0r.github.io/better-thesis-search/).
 
+![app ui](assets/ui.png)
+
 Allows you to filter by thesis type, year, department and language. 
 
 Full text search on title, author, reviewers, department, keywords and language.
