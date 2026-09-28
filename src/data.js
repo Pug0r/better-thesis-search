@@ -19,4 +19,4 @@ export const departments = [
   'Department of Architecture',
   'Department of Information Science',
 ]
-export const languages = ['Angielski', 'Polski']
+export const languages = ['Angielski', 'Polski', 'Niemiecki', 'Włoski', 'Japoński', 'Hiszpański', 'Francuski', 'Rosyjski', 'Ukraiński']

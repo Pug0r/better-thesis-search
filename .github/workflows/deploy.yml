@@ -3,10 +3,14 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - scraper/scrape-state.json
+  schedule:
+    - cron: '0 3 * * 0'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -15,7 +19,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check-for-updates:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install scraper dependencies
+        run: python -m pip install -r scraper/requirements.txt
+
+      - name: Check collection totals
+        id: check
+        shell: bash
+        run: |
+          output="$(python scraper/scraper.py --check)"
+          printf '%s\n' "$output"
+          changed="$(printf '%s\n' "$output" | sed -n 's/^scrape-needed=//p' | tail -n 1)"
+          test "$changed" = true || test "$changed" = false
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
+
   deploy:
+    needs: check-for-updates
+    if: needs.check-for-updates.outputs.changed == 'true'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -23,6 +55,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install scraper dependencies
+        run: python -m pip install -r scraper/requirements.txt
+
+      - name: Scrape thesis metadata
+        run: python scraper/scraper.py
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -50,3 +93,15 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Commit scrape state
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scraper/scrape-state.json
+          if git diff --cached --quiet; then
+            echo 'Scrape state is unchanged'
+          else
+            git commit -m 'Update scrape state'
+            git push
+          fi
