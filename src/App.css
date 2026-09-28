@@ -275,6 +275,13 @@
     font-size: 12px;
 }
 
+mark {
+    padding: 1px 2px;
+    border-radius: 2px;
+    background: #fef08a;
+    color: inherit;
+}
+
 .work-button {
     align-self: center;
     min-width: 150px;

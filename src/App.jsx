@@ -66,6 +66,15 @@ const typeLabels = {
 const DEBOUNCE_MS = 150
 const MAX_RESULTS = 1000
 
+function highlight(text, matchTerms) {
+  if (!matchTerms || !matchTerms.length || !text) return text
+  const escaped = matchTerms.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+  const pattern = new RegExp(`(${escaped.join('|')})`, 'gi')
+  const parts = text.split(pattern)
+  if (parts.length === 1) return text
+  return parts.map((part, index) => pattern.test(part) ? <mark key={index}>{part}</mark> : part)
+}
+
 function SearchApp() {
   const [catalog, setCatalog] = useState({ index: null, error: null })
   const [query, setQuery] = useState('')
@@ -112,15 +121,17 @@ function SearchApp() {
       .catch((error) => setCatalog({ index: null, error }))
   }, [])
   const hasCriteria = debouncedQuery.trim() || selectedTypes.length || selectedYears.length || selectedDepartments.length || selectedLanguages.length
-  const results = useMemo(() => {
-    if (!catalog.index) return []
+  const { totalCount, results } = useMemo(() => {
+    if (!catalog.index) return { totalCount: 0, results: [] }
     const searchQuery = debouncedQuery.trim() || MiniSearch.wildcard
+    const isTextSearch = Boolean(debouncedQuery.trim())
     const matches = catalog.index.search(searchQuery, {
-      prefix: Boolean(debouncedQuery.trim()),
-      fuzzy: debouncedQuery.trim() ? 0.2 : false,
+      prefix: isTextSearch,
+      fuzzy: isTextSearch ? 0.15 : false,
+      combineWith: 'AND',
       filter: (result) => (!selectedTypes.length || selectedTypes.includes(result.type)) && (!selectedYears.length || selectedYears.includes(String(result.year))) && (!selectedDepartments.length || selectedDepartments.includes(result.department)) && (!selectedLanguages.length || selectedLanguages.includes(result.language)),
     })
-    return matches.length > MAX_RESULTS ? matches.slice(0, MAX_RESULTS) : matches
+    return { totalCount: matches.length, results: matches.length > MAX_RESULTS ? matches.slice(0, MAX_RESULTS) : matches }
   }, [catalog.index, debouncedQuery, selectedDepartments, selectedLanguages, selectedTypes, selectedYears])
   const rowVirtualizer = useWindowVirtualizer({ count: results.length, estimateSize: () => 190, overscan: 4 })
   return <main className="app-shell">
@@ -132,8 +143,8 @@ function SearchApp() {
       <aside className="filter-rail"><fieldset><legend>{copy.type}</legend>{facets.types.map((item) => <label key={item}><input type="checkbox" checked={!selectedTypes.length || selectedTypes.includes(item)} onChange={() => toggleFilter(setSelectedTypes, item)} /> <span>{labels[item] || item}</span></label>)}</fieldset><fieldset><legend>{copy.year}</legend>{facets.years.map((item) => <label key={item}><input type="checkbox" checked={selectedYears.includes(item)} onChange={() => toggleFilter(setSelectedYears, item)} /> <span>{item}</span></label>)}</fieldset><fieldset><legend>{copy.department}</legend>{facets.departments.map((item) => <label key={item}><input type="checkbox" checked={selectedDepartments.includes(item)} onChange={() => toggleFilter(setSelectedDepartments, item)} /> <span>{item}</span></label>)}</fieldset><fieldset><legend>{copy.language}</legend>{facets.languages.map((item) => <label key={item}><input type="checkbox" checked={selectedLanguages.includes(item)} onChange={() => toggleFilter(setSelectedLanguages, item)} /> <span>{item}</span></label>)}</fieldset></aside>
       <section className="results-panel" aria-live="polite">
         <div className="search-box"><span className="search-icon" aria-hidden="true">⌕</span><input value={query} onChange={(event) => updateQuery(event.target.value)} placeholder={copy.searchPlaceholder} aria-label={copy.searchAria} autoFocus />{query && <button className="clear-button" type="button" onClick={() => updateQuery('')} aria-label={copy.clear}>×</button>}</div>
-        <div className="results-heading"><span>{results.length} {results.length === 1 ? copy.singular : copy.plural}</span></div>
-        {catalog.error ? <div className="empty-state"><h2>{copy.unavailable}</h2><p>{copy.rebuild}</p></div> : results.length ? <div className="results-list"><div className="results-spacer" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>{rowVirtualizer.getVirtualItems().map((virtualRow) => { const result = results[virtualRow.index]; return <article className="result-card" key={result.id} ref={rowVirtualizer.measureElement} data-index={virtualRow.index} style={{ transform: `translateY(${virtualRow.start}px)` }}><div className="result-content"><div className="result-header"><span className="result-type">{labels[result.type] || result.type}</span><span className="result-year">{result.year}</span><span className="result-language">{result.language}</span></div><h2>{result.title}</h2><p className="result-author">{copy.author}: {result.author} <span>·</span> {copy.advisor}: {result.advisor}</p><p className="result-department">{result.department}</p><div className="keywords">{result.keywords.map((keyword) => <span key={keyword}>{keyword}</span>)}</div></div><a className="work-button" href={result.url} target="_blank" rel="noreferrer">{copy.open}</a></article> })}</div></div> : <div className="empty-state"><span>⌕</span><h2>{catalog.index ? (hasCriteria ? copy.noResults : copy.start) : copy.loading}</h2><p>{catalog.index ? (hasCriteria ? copy.tryAgain : copy.searchHint) : copy.preparing}</p></div>}
+        <div className="results-heading"><span>{totalCount} {totalCount === 1 ? copy.singular : copy.plural}</span></div>
+        {catalog.error ? <div className="empty-state"><h2>{copy.unavailable}</h2><p>{copy.rebuild}</p></div> : results.length ? <div className="results-list"><div className="results-spacer" style={{ height: `${rowVirtualizer.getTotalSize()}px` }}>{rowVirtualizer.getVirtualItems().map((virtualRow) => { const result = results[virtualRow.index]; const terms = result.match ? Object.keys(result.match) : []; return <article className="result-card" key={result.id} ref={rowVirtualizer.measureElement} data-index={virtualRow.index} style={{ transform: `translateY(${virtualRow.start}px)` }}><div className="result-content"><div className="result-header"><span className="result-type">{labels[result.type] || result.type}</span><span className="result-year">{result.year}</span><span className="result-language">{result.language}</span></div><h2>{highlight(result.title, terms)}</h2><p className="result-author">{copy.author}: {highlight(result.author, terms)} <span>·</span> {copy.advisor}: {highlight(result.advisor, terms)}</p><p className="result-department">{highlight(result.department, terms)}</p><div className="keywords">{result.keywords.map((keyword) => <span key={keyword}>{highlight(keyword, terms)}</span>)}</div></div><a className="work-button" href={result.url} target="_blank" rel="noreferrer">{copy.open}</a></article> })}</div></div> : <div className="empty-state"><span>⌕</span><h2>{catalog.index ? (hasCriteria ? copy.noResults : copy.start) : copy.loading}</h2><p>{catalog.index ? (hasCriteria ? copy.tryAgain : copy.searchHint) : copy.preparing}</p></div>}
       </section>
     </div>
   </main>
